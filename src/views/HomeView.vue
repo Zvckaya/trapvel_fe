@@ -3,18 +3,18 @@
     <section class="landing-section">
       <p class="landing-kicker">기대와 실제 만족도의 차이로 보는 관광지 랭킹</p>
 
-      <h1 class="landing-title">
+      <h1 class="landing-title reveal-on-scroll" style="--reveal-delay: 80ms">
         기대보다 <span>더 좋았던 곳</span>과 아쉬웠던 곳
       </h1>
 
       <p class="landing-subtitle">실제 방문 평가와 최근 댓글을 함께 확인하세요.</p>
 
       <div class="brand-block">
-        <p class="brand-en">Trapvel,</p>
+        <p class="brand-en reveal-on-scroll" style="--reveal-delay: 160ms">Trapvel,</p>
         <p class="brand-ko">트랩블</p>
       </div>
 
-      <div class="landing-visual">
+      <div class="landing-visual reveal-on-scroll" style="--reveal-delay: 240ms">
         <img
           src="/images/rocket-3d.png"
           alt="물로켓 3D 아이콘"
@@ -22,7 +22,7 @@
         />
       </div>
 
-      <p class="landing-message">
+      <p class="landing-message reveal-on-scroll" style="--reveal-delay: 320ms">
         기대와 다른 여행, 혹시 <strong>트랩(Trap)</strong>은 아니었나요?
       </p>
 
@@ -166,7 +166,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import { fetchWaterRocketExtremes } from '@/services/locations'
@@ -182,6 +182,29 @@ const rocketTop3 = ref([])
 const rocketBottom3 = ref([])
 const isLoadingComments = ref(false)
 const recentComments = ref([])
+let revealObserver = null
+
+const observeRevealElements = () => {
+  const elements = document.querySelectorAll('.reveal-on-scroll')
+
+  if (!('IntersectionObserver' in window)) {
+    elements.forEach((element) => element.classList.add('is-visible'))
+    return
+  }
+
+  revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-visible')
+        revealObserver.unobserve(entry.target)
+      })
+    },
+    { threshold: 0.2 },
+  )
+
+  elements.forEach((element) => revealObserver.observe(element))
+}
 
 const scrollToMainContent = () => {
   if (!mainContentRef.value) return
@@ -245,14 +268,32 @@ const goTouristDetail = (placeId) => {
 }
 
 onMounted(() => {
+  observeRevealElements()
   loadWaterRocketExtremes()
   loadRecentComments()
+})
+
+onBeforeUnmount(() => {
+  revealObserver?.disconnect()
 })
 </script>
 
 <style scoped>
 .home-page {
   color: #111827;
+}
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(34px);
+  transition:
+    opacity 0.7s ease var(--reveal-delay, 0ms),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .landing-section {
@@ -582,6 +623,14 @@ onMounted(() => {
 @media (max-width: 1024px) {
   .card-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 </style>
