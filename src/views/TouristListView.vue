@@ -4,17 +4,14 @@
       <div>
         <p class="page-kicker">Tourist Gallery</p>
         <h1 class="page-title">전체 관광지 목록</h1>
-        <p class="page-subtitle">
-          백엔드 `locations` API 기준으로 20개씩 불러옵니다.
-        </p>
       </div>
     </section>
 
     <Card class="search-card">
       <template #content>
         <div class="search-row">
-          <span class="p-input-icon-left search-input-wrap">
-            <i class="pi pi-search" />
+          <span class="search-input-wrap">
+            <i class="pi pi-search search-input-icon" aria-hidden="true" />
             <InputText
               v-model="searchKeyword"
               placeholder="관광지명 또는 주소 검색"
@@ -170,12 +167,6 @@ onMounted(() => {
   color: #111827;
 }
 
-.page-subtitle {
-  margin: 8px 0 0;
-  color: #6b7280;
-  line-height: 1.5;
-}
-
 .search-card,
 .place-paginator {
   border-radius: 18px;
@@ -190,17 +181,36 @@ onMounted(() => {
 }
 
 .search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
   flex: 1;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 16px;
+  z-index: 1;
+  color: #6b7280;
+  pointer-events: none;
 }
 
 .search-input {
   width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
 }
 
 .search-button {
+  padding: 12px 22px;
   border-radius: 999px;
   background: #1f6feb;
   border-color: #1f6feb;
+}
+
+:deep(.search-card .p-card-content) {
+  padding: 18px;
 }
 
 .gallery-grid {

@@ -10,7 +10,7 @@
       <p class="landing-subtitle">실제 방문 평가와 최근 댓글을 함께 확인하세요.</p>
 
       <div class="brand-block">
-        <p class="brand-en reveal-on-scroll" style="--reveal-delay: 160ms">Trapvel,</p>
+        <p class="brand-en reveal-on-scroll" style="--reveal-delay: 160ms">Trapvel</p>
         <p class="brand-ko">트랩블</p>
       </div>
 

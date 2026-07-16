@@ -3,10 +3,11 @@
     <div class="app-header__inner">
       <RouterLink to="/" class="app-header__logo">
         <img
-          src="/images/localhub-logo.png"
+          src="/images/rocket-3d.png"
           alt="LocalHub"
           class="app-header__logo-image"
         />
+        <span class="app-header__logo-text">Trapvel</span>
       </RouterLink>
 
       <nav class="app-header__nav" aria-label="주요 메뉴">
@@ -48,6 +49,7 @@
 .app-header__logo {
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   text-decoration: none;
 }
 
@@ -55,6 +57,13 @@
   height: 52px;
   width: auto;
   display: block;
+}
+
+.app-header__logo-text {
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
 }
 
 .app-header__nav {
