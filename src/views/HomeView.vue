@@ -33,9 +33,9 @@
 
     <section ref="mainContentRef" class="main-content-section">
       <div class="section-header">
-        <h2 class="section-title">물로켓 지수 하위 3곳</h2>
+        <h2 class="section-title">물로켓 지수 상위 3곳</h2>
         <p class="section-subtitle">
-          기대와 실제 만족도의 차이가 작았던 관광지입니다.
+          기대보다 실제 만족도가 낮아 아쉬움이 컸던 관광지입니다.
         </p>
       </div>
 
@@ -81,9 +81,9 @@
       <div v-else-if="rocketTop3.length === 0" class="section-empty">표시할 데이터가 없습니다.</div>
 
       <div class="section-header">
-        <h2 class="section-title">물로켓 지수 상위 3곳</h2>
+        <h2 class="section-title">물로켓 지수 하위 3곳</h2>
         <p class="section-subtitle">
-          기대보다 실제 만족도가 낮아 아쉬움이 컸던 관광지입니다.
+          기대와 실제 만족도의 차이가 작았던 관광지입니다.
         </p>
       </div>
 
