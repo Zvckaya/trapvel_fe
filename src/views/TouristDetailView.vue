@@ -88,7 +88,6 @@
               <div class="rating-options" role="radiogroup" aria-label="관광 전 평점">
                 <button v-for="n in 5" :key="`before-${n}`" type="button" class="rating-option" :class="{ active: form.beforeScore === n }" @click="setBeforeScore(n)">{{ n }}</button>
               </div>
-              <div class="avg-text">평균 : {{ formattedPreVisitAvg ?? '-' }}</div>
             </div>
 
             <div class="rating-card">
@@ -96,12 +95,11 @@
               <div class="rating-options" role="radiogroup" aria-label="관광 후 평점">
                 <button v-for="n in 5" :key="`after-${n}`" type="button" class="rating-option" :class="{ active: form.afterScore === n }" @click="setAfterScore(n)">{{ n }}</button>
               </div>
-              <div class="avg-text">평균 : {{ formattedPostVisitAvg ?? '-' }}</div>
             </div>
           </div>
 
           <div class="rating-submit-row">
-            <button type="button" class="register-btn native-register" @click="submitRating">등록</button>
+            <button type="button" class="register-btn native-register" :disabled="submitting" @click="submitRating">평가하기</button>
           </div>
         </template>
       </Card>
@@ -115,6 +113,44 @@
 
         <Card class="surface-card comments-card">
           <template #content>
+            <div class="comment-compose">
+              <div class="comment-credentials">
+                <InputText
+                  id="comment-author"
+                  v-model="form.author"
+                  placeholder="닉네임"
+                  maxlength="50"
+                  class="comment-author-input"
+                  @keydown.enter="submitComment"
+                />
+                <InputText
+                  id="comment-password"
+                  v-model="passwordInput"
+                  type="password"
+                  placeholder="비밀번호 숫자 4자리"
+                  maxlength="4"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  class="comment-password-input"
+                  @input="onPasswordInput"
+                  @keydown.enter="submitComment"
+                />
+              </div>
+
+              <div class="comment-editor">
+                <Textarea
+                  v-model="form.comment"
+                  placeholder="타인의 권리를 침해하거나 명예를 훼손하는 댓글은 운영원칙 및 관련 법률에 따라 제재를 받을 수 있습니다."
+                  class="comment-input"
+                  rows="4"
+                  autoResize
+                />
+                <div class="comment-action">
+                  <button type="button" class="comment-submit native-comment" :disabled="submitting" @click="submitComment">등록</button>
+                </div>
+              </div>
+            </div>
+
             <div v-if="loadingComments" class="status-box">댓글을 불러오는 중입니다.</div>
 
             <div v-else-if="comments.length > 0" class="comment-list">
@@ -131,34 +167,11 @@
             </div>
 
             <div v-else class="status-box">등록된 댓글이 없습니다.</div>
-
-            <div class="comment-input-row">
-              <Textarea v-model="form.comment" placeholder="댓글을 입력하세요." class="comment-input" rows="4" autoResize />
-              <div class="comment-action">
-                <button type="button" class="comment-submit native-comment" @click="onClickCommentWrite">글쓰기</button>
-              </div>
-            </div>
           </template>
         </Card>
       </section>
     </template>
 
-    <!-- Password Dialog -->
-    <Dialog v-model:visible="showPasswordDialog" modal :dismissableMask="true" :style="{ width: '420px', maxWidth: '94vw' }">
-      <template #header>
-        <div class="pw-header">비밀번호 설정</div>
-      </template>
-
-      <div class="pw-dialog-content">
-        <p class="pw-instruction">댓글 삭제 시 사용할 비밀번호 4자리를 입력해주세요.</p>
-        <InputText v-model="passwordInput" placeholder="숫자 4자리" maxlength="4" inputmode="numeric" class="pw-input" />
-
-        <div class="pw-actions">
-          <Button label="취소" text @click="closePasswordDialog" />
-          <Button label="확인" class="p-button-primary" @click="confirmPasswordSubmit" :loading="submitting" />
-        </div>
-      </div>
-    </Dialog>
   </div>
 </template>
 
@@ -169,7 +182,6 @@ import Button from 'primevue/button'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
-import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 
 import { fetchLocation, fetchWaterRocketIndex, resolveLocationIdByContentId } from '@/services/locations'
@@ -196,9 +208,8 @@ const waterRocketScore = ref(null)
 const preVisitAvg = ref(null)
 const postVisitAvg = ref(null)
 
-const form = reactive({ beforeScore: 0, afterScore: 0, comment: '' })
+const form = reactive({ beforeScore: 0, afterScore: 0, author: '', comment: '' })
 
-const showPasswordDialog = ref(false)
 const passwordInput = ref('')
 
 const formatValue = (value) => {
@@ -334,28 +345,27 @@ const submitRating = async () => {
 }
 
 // comment flow
-const onClickCommentWrite = () => {
-  const text = form.comment.trim()
-  if (!text) { alert('댓글을 입력해주세요.'); return }
-  passwordInput.value = ''
-  showPasswordDialog.value = true
+const onPasswordInput = (event) => {
+  passwordInput.value = event.target.value.replace(/\D/g, '').slice(0, 4)
 }
 
-const closePasswordDialog = () => { showPasswordDialog.value = false; passwordInput.value = '' }
-
-const confirmPasswordSubmit = async () => {
+const submitComment = async () => {
+  const author = form.author.trim()
+  const content = form.comment.trim()
+  if (!author) { alert('닉네임을 입력해주세요.'); return }
+  if (!content) { alert('댓글을 입력해주세요.'); return }
   if (!/^\d{4}$/.test(String(passwordInput.value))) { alert('비밀번호는 숫자 4자리여야 합니다.'); return }
   if (!backendId.value) { alert('식별자 오류입니다.'); return }
   submitting.value = true
   try {
-    await createCommentApi(backendId.value, { author: '익명', content: form.comment.trim(), password: String(passwordInput.value) })
+    await createCommentApi(backendId.value, { author, content, password: String(passwordInput.value) })
+    form.author = ''
     form.comment = ''
     passwordInput.value = ''
-    showPasswordDialog.value = false
     await Promise.all([loadComments(), loadWaterRocketIndex(), loadEvaluationAverages()])
     alert('댓글이 등록되었습니다.')
   } catch (error) {
-    console.error('confirmPasswordSubmit error', error)
+    console.error('submitComment error', error)
     alert(error.response?.data?.detail || '댓글 등록에 실패했습니다.')
   } finally { submitting.value = false }
 }
@@ -375,8 +385,7 @@ watch(() => route.params.id, () => { loadAll() })
 </script>
 
 <style scoped>
-:root{--color-primary:#1f6feb;--color-primary-600:#0f4fe8;--color-muted:#6b7280;--bg:#f4f8ff;--card-bg:#ffffff;--accent-blue:#1f6feb;--bubble-bg:#eaf6ff}
-.tourist-detail-page{max-width:920px;margin:24px auto;padding:18px;background:#fff;font-family:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:#111827}
+.tourist-detail-page{--color-primary:#1f6feb;--color-primary-600:#0f4fe8;--color-muted:#6b7280;--bg:#f4f8ff;--card-bg:#ffffff;--accent-blue:#1f6feb;--bubble-bg:#eaf6ff;max-width:920px;margin:24px auto;padding:18px;background:#fff;font-family:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:#111827}
 .page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid #e6eefc;padding-bottom:14px}
 .page-kicker{margin:0 0 8px 0;font-size:1.25rem;font-weight:900;color:var(--accent-blue);text-transform:uppercase}
 .title-row{display:flex;align-items:flex-start;gap:16px}
@@ -393,13 +402,18 @@ watch(() => route.params.id, () => { loadAll() })
 .rating-container{margin-top:16px;border-radius:12px}.rating-row{display:flex;gap:18px;align-items:center}.rating-card{flex:1;background:#fff;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:center;border:1px solid #f0f5ff;box-shadow:0 8px 18px rgba(31,111,235,0.04)}.rating-kicker{align-self:flex-start;color:var(--accent-blue);font-weight:900}.rating-options{display:flex;gap:10px;justify-content:center}.rating-option{width:48px;height:48px;border-radius:999px;background:#f1f8ff;color:#1e3a8a;border:1px solid rgba(31,111,235,0.08);display:inline-flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}.rating-option:hover{transform:translateY(-3px)}.rating-option.active{background:var(--accent-blue);color:#fff;box-shadow:0 8px 18px rgba(31,111,235,0.12)}.rating-actions{display:flex;align-items:center;justify-content:center}.register-btn{background:var(--accent-blue);border-radius:999px;color:#fff;padding:8px 14px;font-weight:800}
 .comments-section{margin-top:22px}.comments-header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid #e6eefc;padding-bottom:12px;margin-bottom:12px}.comments-title{margin:0;font-size:1.05rem;font-weight:900}
 .comment-list{display:flex;flex-direction:column;gap:18px;padding-top:12px}.comment-item{display:flex;flex-direction:column;gap:6px}.comment-bubble{width:fit-content;max-width:84%;background:var(--bubble-bg);padding:12px 16px;border-radius:18px;position:relative;box-shadow:0 8px 16px rgba(31,111,235,0.04)}.comment-bubble::after{content:'';position:absolute;left:-10px;top:14px;width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid var(--bubble-bg)}.comment-text{margin:0;color:#0f1724;line-height:1.5}.comment-meta{display:flex;align-items:center;gap:12px;color:var(--color-muted);font-size:0.9rem}.comment-delete{margin-left:auto}
-.comment-input-row{margin-top:18px;display:flex;gap:12px;align-items:flex-end}
-.comment-input{flex:1;min-height:72px;border-radius:14px;padding:12px;background:#f8fafc}
-.comment-action{width:140px;display:flex;justify-content:flex-end}
-.comment-submit,.native-comment{background:var(--accent-blue) !important;border-radius:999px !important;color:#fff !important;padding:8px 14px !important;font-weight:700 !important;border:0 !important;cursor:pointer !important;box-shadow:0 6px 14px rgba(31,111,235,0.12) !important}
-.native-register{background:var(--accent-blue) !important;color:#fff !important;border-radius:12px !important;padding:10px 18px !important;font-weight:900 !important;border:0 !important;cursor:pointer !important;box-shadow:0 8px 18px rgba(31,111,235,0.12) !important}
+.comment-compose{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:start;padding-bottom:20px;margin-bottom:18px;border-bottom:1px solid #e6eefc}
+.comment-credentials{display:flex;flex-direction:column;gap:8px}
+.comment-author-input,.comment-password-input{width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:4px;font-size:.88rem}
+.comment-author-input::placeholder,.comment-password-input::placeholder,.comment-input::placeholder{color:#b6bec9;opacity:1}
+.comment-editor{display:flex;flex-direction:column;gap:8px;min-width:0}
+.comment-input{width:100%;min-height:106px;border:1px solid #cbd5e1;border-radius:4px;padding:12px;background:#fff;resize:vertical}
+.comment-action{display:flex;justify-content:flex-end}
+.comment-submit,.native-comment{min-width:120px;background:var(--accent-blue) !important;border-radius:4px !important;color:#fff !important;padding:11px 24px !important;font-size:.95rem !important;font-weight:800 !important;border:0 !important;cursor:pointer !important;box-shadow:0 6px 14px rgba(31,111,235,0.12) !important}
+.comment-submit:disabled{opacity:.6;cursor:not-allowed !important}
+.native-register{background:#1f6feb !important;color:#fff !important;border-radius:999px !important;padding:12px 28px !important;font-weight:900 !important;border:0 !important;cursor:pointer !important;box-shadow:0 8px 18px rgba(31,111,235,0.2) !important}
+.native-register:hover{background:#1558b0 !important}.native-register:disabled{opacity:.6;cursor:not-allowed !important}
 .rating-submit-row{margin-top:12px;display:flex;justify-content:center}
-.pw-dialog-content{display:flex;flex-direction:column;gap:10px;padding:6px 4px 12px}.pw-instruction{color:var(--color-muted);margin:0}.pw-input{font-size:1rem;padding:10px;border-radius:8px}.pw-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
 .status-box{padding:20px 0;text-align:center;color:var(--color-muted)}.error-text{color:#dc2626}
-@media (max-width:760px){.hero-grid{grid-template-columns:1fr}.rating-row{flex-direction:column;align-items:stretch}.register-btn{width:100%}.comment-action{width:auto}}
+@media (max-width:760px){.hero-grid{grid-template-columns:1fr}.rating-row{flex-direction:column;align-items:stretch}.register-btn{width:100%}.comment-compose{grid-template-columns:1fr}.comment-credentials{display:grid;grid-template-columns:1fr 1fr}.comment-submit{width:100%}}
 </style>
