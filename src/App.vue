@@ -145,7 +145,7 @@ const sendMessage = async () => {
   scrollToBottom()
 
   try {
-    const endpoint = (import.meta.env.VITE_CHATBOT_API_URL || '/api/chat').replace(/\/$/, '')
+    const endpoint = (import.meta.env.VITE_CHATBOT_API_URL || 'https://trapvel-fe.onrender.com/api/chat').replace(/\/$/, '')
 
     // build history from current messages
     const history = chatMessages.value.map((m) => ({
