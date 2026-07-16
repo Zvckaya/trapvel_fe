@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>광주 관광지 챗봇</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f4f5f7; font-family: Arial, sans-serif; }
+    main { width: min(900px, 94%); margin: 30px auto; }
+    h1 { margin-bottom: 8px; }
+    .description { color: #555; margin-bottom: 18px; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+    .examples button { border: 1px solid #ccc; background: white; border-radius: 20px; padding: 8px 12px; cursor: pointer; }
+    #messages { min-height: 420px; max-height: 550px; overflow-y: auto; background: white; border-radius: 14px; padding: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.08); }
+    .message { max-width: 80%; white-space: pre-wrap; line-height: 1.55; padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; }
+    .user { margin-left: auto; background: #dbeafe; }
+    .assistant { background: #eee; }
+    .places { display: grid; gap: 10px; margin: 6px 0 18px; }
+    .place { display: grid; grid-template-columns: 90px 1fr; gap: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: white; }
+    .place img { width: 90px; height: 75px; border-radius: 8px; object-fit: cover; background: #ddd; }
+    .place strong { display: block; margin-bottom: 5px; }
+    .place small { color: #666; line-height: 1.4; }
+    form { display: flex; gap: 10px; margin-top: 14px; }
+    input { flex: 1; padding: 14px; border: 1px solid #bbb; border-radius: 10px; font-size: 16px; }
+    form button { border: 0; border-radius: 10px; padding: 0 22px; background: #2563eb; color: white; cursor: pointer; }
+    form button:disabled { background: #999; }
+    #mode { color: #666; font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>광주 관광지 챗봇</h1>
+  <div class="description">업로드된 관광지 505개를 검색하고, 검색 결과를 AI가 설명합니다.</div>
+
+  <div class="examples">
+    <button type="button">동구에서 산책하기 좋은 곳 추천해줘</button>
+    <button type="button">무등산 관련 관광지를 알려줘</button>
+    <button type="button">광산구의 공원 찾아줘</button>
+    <button type="button">역사 문화 관광지 추천해줘</button>
+  </div>
+
+  <div id="messages">
+    <div class="message assistant">관광지 이름, 지역 또는 원하는 유형을 질문해보세요.</div>
+  </div>
+
+  <form id="chatForm">
+    <input id="messageInput" placeholder="예: 동구에서 산책하기 좋은 곳 추천해줘" autocomplete="off">
+    <button id="sendButton">전송</button>
+  </form>
+  <div id="mode"></div>
+</main>
+
+<script>
+  const messages = document.getElementById("messages");
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("messageInput");
+  const button = document.getElementById("sendButton");
+  const mode = document.getElementById("mode");
+  const history = [];
+
+  function addMessage(role, text) {
+    const element = document.createElement("div");
+    element.className = `message ${role}`;
+    element.textContent = text;
+    messages.appendChild(element);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function addPlaces(places) {
+    if (!places?.length) return;
+
+    const container = document.createElement("div");
+    container.className = "places";
+
+    for (const place of places) {
+      const card = document.createElement("div");
+      card.className = "place";
+
+      const image = document.createElement("img");
+      image.src = place.image || "";
+      image.alt = place.title;
+      image.onerror = () => image.style.visibility = "hidden";
+
+      const detail = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = place.title;
+
+      const info = document.createElement("small");
+      info.textContent = `${place.category} · ${place.district}\n${place.address}`;
+
+      detail.append(title, info);
+      card.append(image, detail);
+      container.appendChild(card);
+    }
+
+    messages.appendChild(container);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  async function sendMessage(message) {
+    message = message.trim();
+    if (!message || button.disabled) return;
+
+    addMessage("user", message);
+    input.value = "";
+    button.disabled = true;
+    button.textContent = "답변 중";
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message, history})
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "요청 실패");
+
+      addMessage("assistant", data.answer);
+      addPlaces(data.places);
+      mode.textContent = data.used_ai
+        ? "OpenAI API를 이용해 답변했습니다."
+        : "API 키가 없거나 호출에 실패하여 로컬 검색 결과로 답변했습니다.";
+
+      history.push({role: "user", content: message});
+      history.push({role: "assistant", content: data.answer});
+      if (history.length > 12) history.splice(0, history.length - 12);
+    } catch (error) {
+      addMessage("assistant", `오류: ${error.message}`);
+    } finally {
+      button.disabled = false;
+      button.textContent = "전송";
+      input.focus();
+    }
+  }
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    sendMessage(input.value);
+  });
+
+  document.querySelectorAll(".examples button").forEach(example => {
+    example.addEventListener("click", () => sendMessage(example.textContent));
+  });
+</script>
+</body>
+</html>
