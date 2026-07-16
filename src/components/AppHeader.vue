@@ -11,6 +11,7 @@
 
       <nav class="app-header__nav" aria-label="주요 메뉴">
         <RouterLink to="/" class="app-header__link">홈</RouterLink>
+        <RouterLink to="/tourists" class="app-header__link">관광지</RouterLink>
         <RouterLink to="/posts" class="app-header__link">게시판</RouterLink>
       </nav>
     </div>
@@ -74,6 +75,6 @@
 }
 
 .app-header__link.router-link-active {
-  color: var(--color-text-sub);
+  color: var(--color-primary);
 }
 </style>
