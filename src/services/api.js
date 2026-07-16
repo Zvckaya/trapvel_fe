@@ -11,4 +11,13 @@ const api = axios.create({
   // timeout: 10000,
 })
 
+const chatbotApi = axios.create({
+  baseURL: import.meta.env.VITE_CHATBOT_API_URL || 'https://trapvel-fe.onrender.com/api/chat',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  // timeout: 10000,
+})
+
 export default api
+export { chatbotApi }
