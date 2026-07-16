@@ -44,34 +44,56 @@
             </div>
 
             <div class="hero-panel">
-              <div class="metric-lead">
-                <div class="metric-row">
-                  <div class="metric-text">
-                    <p class="metric-kicker">물로켓 지수</p>
-                    <h2 class="metric-value">{{ formattedWaterRocketScore }}</h2>
-                    <p class="metric-sub">기대와 실제 만족도의 차이를 한눈에 보여주는 지표입니다.</p>
-                  </div>
-
-                  <div class="bar-wrap">
-                    <div class="bar-bg">
-                      <div class="bar-fill" :style="{ width: fillPercent + '%', background: barColor, right: isNegative ? 0 : 'auto', left: isNegative ? 'auto' : 0 }" />
+              <div class="score-overview">
+                <div class="score-panel score-panel--rocket">
+                  <div class="score-panel__header">
+                    <div>
+                      <p class="score-panel__label">물로켓 지수</p>
+                      <p class="score-panel__description">기대와 실제 만족도의 차이</p>
                     </div>
+                    <strong class="score-panel__value">
+                      {{ formattedWaterRocketScore }} <span>/ ±5</span>
+                    </strong>
+                  </div>
+                  <div class="score-track score-track--bipolar" role="meter" aria-label="물로켓 지수" aria-valuemin="-5" aria-valuemax="5" :aria-valuenow="waterRocketScore ?? 0">
+                    <span class="score-track__center" aria-hidden="true" />
+                    <div
+                      class="score-track__fill score-track__fill--rocket"
+                      :class="{ 'is-negative': isWaterRocketNegative }"
+                      :style="{ width: `${waterRocketMagnitudePercent}%` }"
+                    />
+                  </div>
+                  <div class="score-scale" aria-hidden="true"><span>-5</span><span>0</span><span>+5</span></div>
+                </div>
+
+                <div class="score-panel">
+                  <div class="score-panel__header">
+                    <div>
+                      <p class="score-panel__label">방문 전 지수</p>
+                      <p class="score-panel__description">방문 전 기대 평점</p>
+                    </div>
+                    <strong class="score-panel__value">
+                      {{ formattedPreVisitAvg }} <span>/ 5</span>
+                    </strong>
+                  </div>
+                  <div class="score-track" role="progressbar" aria-label="방문 전 지수" aria-valuemin="0" aria-valuemax="5" :aria-valuenow="preVisitAvg ?? 0">
+                    <div class="score-track__fill score-track__fill--pre" :style="{ width: `${preVisitPercent}%` }" />
                   </div>
                 </div>
-              </div>
 
-              <div class="metric-grid">
-                <div class="metric-card">
-                  <span class="metric-label">물로켓 지수</span>
-                  <strong class="metric-number">{{ formattedWaterRocketScore }}</strong>
-                </div>
-                <div class="metric-card">
-                  <span class="metric-label">방문 전 평균</span>
-                  <strong class="metric-number">{{ formattedPreVisitAvg }}</strong>
-                </div>
-                <div class="metric-card">
-                  <span class="metric-label">방문 후 평균</span>
-                  <strong class="metric-number">{{ formattedPostVisitAvg }}</strong>
+                <div class="score-panel">
+                  <div class="score-panel__header">
+                    <div>
+                      <p class="score-panel__label">방문 후 지수</p>
+                      <p class="score-panel__description">방문 후 만족 평점</p>
+                    </div>
+                    <strong class="score-panel__value">
+                      {{ formattedPostVisitAvg }} <span>/ 5</span>
+                    </strong>
+                  </div>
+                  <div class="score-track" role="progressbar" aria-label="방문 후 지수" aria-valuemin="0" aria-valuemax="5" :aria-valuenow="postVisitAvg ?? 0">
+                    <div class="score-track__fill score-track__fill--post" :style="{ width: `${postVisitPercent}%` }" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -222,14 +244,20 @@ const formattedWaterRocketScore = computed(() => formatValue(waterRocketScore.va
 const formattedPreVisitAvg = computed(() => formatValue(preVisitAvg.value))
 const formattedPostVisitAvg = computed(() => formatValue(postVisitAvg.value))
 
-/* bar helpers */
-const fillPercent = computed(() => {
-  const v = Number(waterRocketScore.value) || 0
-  const abs = Math.min(Math.abs(v), 5)
-  return Math.round((abs / 5) * 100)
+const scoreToPercent = (score) => {
+  const value = Number(score)
+  if (!Number.isFinite(value)) return 0
+  return Math.min(Math.max(value, 0), 5) * 20
+}
+
+const waterRocketMagnitudePercent = computed(() => {
+  const value = Number(waterRocketScore.value)
+  if (!Number.isFinite(value)) return 0
+  return Math.min(Math.abs(value), 5) * 10
 })
-const isNegative = computed(() => Number(waterRocketScore.value) < 0)
-const barColor = computed(() => (isNegative.value ? '#ff3b3b' : '#1f6feb'))
+const isWaterRocketNegative = computed(() => Number(waterRocketScore.value) < 0)
+const preVisitPercent = computed(() => scoreToPercent(preVisitAvg.value))
+const postVisitPercent = computed(() => scoreToPercent(postVisitAvg.value))
 
 const previewScore = computed(() => {
   const b = Number(form.beforeScore) || 0
@@ -396,9 +424,7 @@ watch(() => route.params.id, () => { loadAll() })
 .hero-card{padding:18px;border-radius:12px;margin-top:16px}.hero-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}@media(max-width:920px){.hero-grid{grid-template-columns:1fr}}
 .hero-image-wrap{background:#f8fbff;border-radius:12px;overflow:hidden;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
 .hero-image{width:100%;height:100%;object-fit:cover;display:block}
-.metric-lead{margin-bottom:8px}.metric-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.metric-text{display:flex;flex-direction:column;gap:6px}.metric-kicker{margin:0;font-weight:800;color:var(--accent-blue)}.metric-value{margin:0;font-size:48px;font-weight:900;color:var(--color-primary-600)}.metric-sub{margin:0;color:var(--color-muted);font-size:0.95rem}
-.bar-wrap{width:160px}.bar-bg{width:100%;height:18px;background:#eef6ff;border-radius:999px;position:relative;overflow:hidden}.bar-fill{height:100%;border-radius:999px;position:absolute;top:0;left:0;transition:width 500ms ease}
-.metric-grid{display:flex;gap:12px;margin-top:8px}.metric-card{background:#fff;border-radius:12px;padding:10px 12px;border:1px solid #dbeafe;box-shadow:0 6px 14px rgba(31,111,235,0.04)}.metric-label{display:block;color:#6b7280;font-size:0.9rem}.metric-number{display:block;font-weight:900;font-size:1.25rem;color:#111827}
+.score-overview{display:flex;flex-direction:column;gap:12px}.score-panel{padding:16px;border:1px solid #dbeafe;border-radius:14px;background:#fff;box-shadow:0 6px 14px rgba(31,111,235,.04)}.score-panel--rocket{background:#f8fbff;border-color:#bfdbfe}.score-panel__header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}.score-panel__label{margin:0;color:#111827;font-size:1rem;font-weight:900}.score-panel--rocket .score-panel__label{color:var(--accent-blue)}.score-panel__description{margin:4px 0 0;color:var(--color-muted);font-size:.82rem}.score-panel__value{flex-shrink:0;color:#111827;font-size:1.45rem;line-height:1;font-weight:900}.score-panel--rocket .score-panel__value{color:var(--color-primary-600)}.score-panel__value span{color:#94a3b8;font-size:.8rem;font-weight:700}.score-track{position:relative;width:100%;height:12px;overflow:hidden;border-radius:999px;background:#eaf0f8}.score-track__fill{height:100%;border-radius:inherit;transition:width .6s cubic-bezier(.22,1,.36,1)}.score-track__fill--rocket{position:absolute;left:50%;background:#1f6feb;border-radius:0 999px 999px 0}.score-track__fill--rocket.is-negative{right:50%;left:auto;background:#ef4444;border-radius:999px 0 0 999px}.score-track__center{position:absolute;top:0;bottom:0;left:50%;z-index:2;width:2px;background:#475569;transform:translateX(-1px)}.score-scale{display:flex;justify-content:space-between;margin-top:5px;color:#94a3b8;font-size:.7rem}.score-track__fill--pre{background:#60a5fa}.score-track__fill--post{background:#2563eb}
 .rating-container{margin-top:16px;border-radius:12px}.rating-row{display:flex;gap:18px;align-items:center}.rating-card{flex:1;background:#fff;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:center;border:1px solid #f0f5ff;box-shadow:0 8px 18px rgba(31,111,235,0.04)}.rating-kicker{align-self:flex-start;color:var(--accent-blue);font-weight:900}.rating-options{display:flex;gap:10px;justify-content:center}.rating-option{width:48px;height:48px;border-radius:999px;background:#f1f8ff;color:#1e3a8a;border:1px solid rgba(31,111,235,0.08);display:inline-flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}.rating-option:hover{transform:translateY(-3px)}.rating-option.active{background:var(--accent-blue);color:#fff;box-shadow:0 8px 18px rgba(31,111,235,0.12)}.rating-actions{display:flex;align-items:center;justify-content:center}.register-btn{background:var(--accent-blue);border-radius:999px;color:#fff;padding:8px 14px;font-weight:800}
 .comments-section{margin-top:22px}.comments-header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid #e6eefc;padding-bottom:12px;margin-bottom:12px}.comments-title{margin:0;font-size:1.05rem;font-weight:900}
 .comment-list{display:flex;flex-direction:column;gap:18px;padding-top:12px}.comment-item{display:flex;flex-direction:column;gap:6px}.comment-bubble{width:fit-content;max-width:84%;background:var(--bubble-bg);padding:12px 16px;border-radius:18px;position:relative;box-shadow:0 8px 16px rgba(31,111,235,0.04)}.comment-bubble::after{content:'';position:absolute;left:-10px;top:14px;width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid var(--bubble-bg)}.comment-text{margin:0;color:#0f1724;line-height:1.5}.comment-meta{display:flex;align-items:center;gap:12px;color:var(--color-muted);font-size:0.9rem}.comment-delete{margin-left:auto}
