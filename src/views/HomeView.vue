@@ -35,7 +35,7 @@
       <div class="section-header">
         <h2 class="section-title">물로켓 지수 상위 3곳</h2>
         <p class="section-subtitle">
-          기대보다 실제 만족도가 더 높았던 관광지입니다.
+          기대보다 실제 만족도가 낮아 아쉬움이 컸던 관광지입니다.
         </p>
       </div>
 
@@ -56,8 +56,8 @@
 
           <template #title>
             <div class="card-title-row">
-              <span class="rank-badge">{{ item.rank }}위</span>
               <span class="card-title-text">{{ item.name }}</span>
+              <span class="rank-badge">{{ item.rank }}위</span>
             </div>
           </template>
 
@@ -67,8 +67,9 @@
                 {{ item.address || '주소 정보 없음' }}
               </p>
               <div class="card-meta">
-                <Tag :value="formatScore(item.score)" severity="danger" />
-                <span class="meta-text">물로켓 지수</span>
+                <span class="score-badge score-badge--high">
+                  물로켓 지수 {{ formatScore(item.score) }}
+                </span>
               </div>
             </div>
           </template>
@@ -82,7 +83,7 @@
       <div class="section-header">
         <h2 class="section-title">물로켓 지수 하위 3곳</h2>
         <p class="section-subtitle">
-          기대에 비해 실제 만족도가 낮았던 관광지입니다.
+          기대와 실제 만족도의 차이가 작았던 관광지입니다.
         </p>
       </div>
 
@@ -103,8 +104,8 @@
 
           <template #title>
             <div class="card-title-row">
-              <span class="rank-badge place">{{ item.rank }}위</span>
               <span class="card-title-text">{{ item.name }}</span>
+              <span class="rank-badge place">{{ item.rank }}위</span>
             </div>
           </template>
 
@@ -114,8 +115,9 @@
                 {{ item.address || '주소 정보 없음' }}
               </p>
               <div class="card-meta">
-                <Tag :value="formatScore(item.score)" severity="info" />
-                <span class="meta-text">물로켓 지수</span>
+                <span class="score-badge score-badge--low">
+                  물로켓 지수 {{ formatScore(item.score) }}
+                </span>
               </div>
             </div>
           </template>
@@ -167,7 +169,6 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
-import Tag from 'primevue/tag'
 import { fetchWaterRocketExtremes } from '@/services/locations'
 import { fetchRecentComments } from '@/services/comment'
 
@@ -420,6 +421,7 @@ onMounted(() => {
 .card-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
 }
@@ -443,8 +445,12 @@ onMounted(() => {
 }
 
 .card-title-text {
-  font-size: 1.05rem;
-  font-weight: 800;
+  flex: 1;
+  min-width: 0;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 900;
+  letter-spacing: -0.025em;
   color: #111827;
 }
 
@@ -456,8 +462,9 @@ onMounted(() => {
 
 .card-description {
   margin: 0;
-  color: #374151;
-  line-height: 1.55;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  line-height: 1.45;
   word-break: keep-all;
 }
 
@@ -468,9 +475,24 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.meta-text {
-  color: #6b7280;
-  font-size: 0.92rem;
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.score-badge--high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.score-badge--low {
+  background: #e0f2fe;
+  color: #0284c7;
 }
 
 .section-empty,
