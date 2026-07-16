@@ -149,7 +149,8 @@
               @keydown.enter="goTouristDetail(comment.locationId)"
             >
               <div class="post-item__top">
-                <h3 class="post-item__title">{{ comment.author }}</h3>
+                <h3 class="post-item__title">{{ comment.locationTitle }}</h3>
+                <span class="post-item__author">{{ comment.author }}</span>
               </div>
               <p class="post-item__summary">{{ comment.summary }}</p>
             </article>
@@ -225,6 +226,8 @@ const loadRecentComments = async () => {
     recentComments.value = (data ?? []).map((item) => ({
       id: item.id,
       locationId: item.location_id,
+      locationContentId: item.location_content_id,
+      locationTitle: item.location_title || '관광지 정보 없음',
       author: item.author || '익명',
       summary: item.content || '',
     }))
@@ -513,9 +516,15 @@ onMounted(() => {
 
 .post-item__title {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1.18rem;
   font-weight: 800;
   color: #111827;
+}
+
+.post-item__author {
+  flex-shrink: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .post-item__summary {
